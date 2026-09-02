@@ -1,0 +1,25 @@
+# Discord
+discord.py==2.4.0
+
+# Backend
+fastapi==0.115.12
+uvicorn[standard]==0.34.3
+sqlalchemy==2.0.41
+pydantic==2.11.4
+pydantic-settings==2.9.1
+
+# Auth
+python-jose[cryptography]==3.3.0
+passlib[bcrypt]==1.7.4
+bcrypt==4.2.1
+
+# HTTP / forms
+python-multipart==0.0.20
+python-dotenv==1.1.0
+httpx==0.28.1
+
+# Rate limiting
+slowapi==0.1.9
+
+# CLI launcher
+rich==13.9.4

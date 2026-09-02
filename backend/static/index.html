@@ -1,0 +1,1079 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Screening Console</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Inter:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap">
+<style>
+:root {
+  --bg:       #08080d;
+  --s1:       #0f0f16;
+  --s2:       #14141c;
+  --s3:       #1c1c26;
+  --border:   #1e1e2a;
+  --border-hi:#2c2c3e;
+  --text:     #d4d4e0;
+  --sub:      #64647a;
+  --dim:      #333346;
+  --pass:     #3ddc84;  --pass-bg: rgba(61,220,132,.09);
+  --fail:     #ff6464;  --fail-bg: rgba(255,100,100,.09);
+  --flag:     #f59e0b;  --flag-bg: rgba(245,158,11,.09);
+  --blue:     #818cf8;  --blue-bg: rgba(129,140,248,.09);
+  --font-d:'Syne',sans-serif;
+  --font-u:'Inter',system-ui,sans-serif;
+  --font-m:'DM Mono','Courier New',monospace;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{font-size:14px;color-scheme:dark}
+body{font-family:var(--font-u);background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;line-height:1.5}
+body::before{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;background-image:radial-gradient(circle,rgba(255,255,255,.032) 1px,transparent 1px);background-size:28px 28px}
+
+/* ── Login ───────────────────────────────────────────────────────── */
+#login-screen{position:fixed;inset:0;z-index:20;display:flex;align-items:center;justify-content:center;transition:opacity .35s ease}
+#login-screen.out{opacity:0;pointer-events:none}
+.login-wrap{width:320px;position:relative;z-index:1}
+.lw-mark{text-align:center;margin-bottom:52px}
+.lw-name{font-family:var(--font-d);font-size:1rem;font-weight:800;letter-spacing:.16em;text-transform:uppercase;color:#fff}
+.lw-rule{width:28px;height:1px;background:var(--border-hi);margin:14px auto}
+.lw-tag{font-family:var(--font-m);font-size:.6rem;color:var(--sub);letter-spacing:.22em;text-transform:uppercase}
+.lf{margin-bottom:26px}
+.lf label{display:block;font-family:var(--font-m);font-size:.6rem;letter-spacing:.18em;text-transform:uppercase;color:var(--sub);margin-bottom:8px}
+.lf input{display:block;width:100%;background:transparent;border:none;border-bottom:1px solid var(--border-hi);color:var(--text);font-family:var(--font-u);font-size:.9rem;padding:5px 0 9px;outline:none;transition:border-color .2s}
+.lf input:focus{border-bottom-color:var(--text)}
+#lerr{font-family:var(--font-m);font-size:.68rem;color:var(--fail);text-align:center;margin-bottom:12px;min-height:16px}
+.btn-auth{display:flex;align-items:center;justify-content:space-between;width:100%;padding:12px 0;background:transparent;border:none;border-top:1px solid var(--border-hi);color:var(--text);font-family:var(--font-m);font-size:.7rem;letter-spacing:.2em;text-transform:uppercase;cursor:pointer;margin-top:6px;transition:color .15s}
+.btn-auth:hover{color:#fff}
+.btn-auth-arrow{font-size:.95rem;letter-spacing:0;transition:transform .2s}
+.btn-auth:hover .btn-auth-arrow{transform:translateX(4px)}
+
+/* ── App ─────────────────────────────────────────────────────────── */
+#app{display:none;flex-direction:column;min-height:100vh;position:relative;z-index:1}
+#app.visible{display:flex}
+
+/* ── Topbar ──────────────────────────────────────────────────────── */
+#topbar{position:sticky;top:0;z-index:10;height:52px;display:flex;align-items:center;background:rgba(8,8,13,.9);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-bottom:1px solid var(--border);padding:0 24px;flex-shrink:0;gap:0}
+.tb-brand{margin-right:32px;display:flex;flex-direction:column;justify-content:center}
+.tb-name{font-family:var(--font-d);font-size:.75rem;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:#fff;line-height:1}
+.tb-tag{font-family:var(--font-m);font-size:.52rem;color:var(--dim);letter-spacing:.2em;text-transform:uppercase;margin-top:2px}
+.tb-tabs{display:flex;align-items:stretch;height:100%;flex:1;overflow-x:auto;scrollbar-width:none}
+.tb-tabs::-webkit-scrollbar{display:none}
+.tb-tab{display:flex;align-items:center;padding:0 16px;font-size:.75rem;font-weight:500;color:var(--sub);cursor:pointer;border-bottom:2px solid transparent;transition:color .15s,border-color .15s;white-space:nowrap;user-select:none;position:relative}
+.tb-tab:hover{color:var(--text)}
+.tb-tab.active{color:#fff;border-bottom-color:rgba(255,255,255,.45)}
+.tb-badge{display:inline-flex;align-items:center;justify-content:center;min-width:16px;height:16px;padding:0 4px;background:var(--fail-bg);color:var(--fail);border-radius:2px;font-family:var(--font-m);font-size:.55rem;margin-left:6px}
+.tb-right{display:flex;align-items:center;gap:12px;margin-left:auto;flex-shrink:0;padding-left:16px}
+.tb-status{display:flex;align-items:center;gap:6px;font-family:var(--font-m);font-size:.62rem;color:var(--sub)}
+.tb-dot{width:6px;height:6px;border-radius:50%;background:var(--pass);box-shadow:0 0 5px var(--pass)}
+.btn-so{font-family:var(--font-m);font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;color:var(--sub);background:none;border:none;cursor:pointer;transition:color .15s}
+.btn-so:hover{color:var(--fail)}
+
+/* ── Main ────────────────────────────────────────────────────────── */
+main{flex:1;padding:28px 24px;overflow-y:auto}
+.tab{display:none}
+.tab.active{display:block;animation:fsup .2s ease both}
+@keyframes fsup{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:translateY(0)}}
+
+/* ── Page header ─────────────────────────────────────────────────── */
+.ph{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:22px}
+.ph-title{font-family:var(--font-d);font-size:1.2rem;font-weight:800;color:#fff;letter-spacing:-.02em}
+.ph-sub{font-family:var(--font-m);font-size:.65rem;color:var(--sub);margin-top:3px;letter-spacing:.06em}
+.ph-actions{display:flex;gap:8px;align-items:center}
+
+/* ── Buttons ─────────────────────────────────────────────────────── */
+.btn{display:inline-flex;align-items:center;gap:5px;padding:7px 13px;font-family:var(--font-u);font-size:.775rem;font-weight:600;border:1px solid var(--border-hi);border-radius:3px;cursor:pointer;transition:opacity .15s,transform .12s,background .15s;white-space:nowrap}
+.btn:hover{opacity:.82;transform:translateY(-1px)}
+.btn:active{transform:translateY(0)}
+.btn-primary{background:#fff;color:#08080d;border-color:transparent}
+.btn-ghost{background:var(--s2);color:var(--text)}
+.btn-danger{background:var(--fail-bg);color:var(--fail);border-color:rgba(255,100,100,.18)}
+.btn-success{background:var(--pass-bg);color:var(--pass);border-color:rgba(61,220,132,.18)}
+.btn-warn{background:var(--flag-bg);color:var(--flag);border-color:rgba(245,158,11,.18)}
+.btn-sm{padding:5px 9px;font-size:.72rem}
+
+/* ── Dashboard grid ──────────────────────────────────────────────── */
+.dash-grid{display:grid;grid-template-columns:210px 1fr 256px;grid-template-rows:auto 1fr;grid-template-areas:"hero chart feed" "chips chart feed";gap:1px;background:var(--border);border:1px solid var(--border);min-height:380px}
+.dp{background:var(--s1);padding:20px}
+.d-hero{grid-area:hero;display:flex;flex-direction:column;justify-content:space-between}
+.d-hero-num{font-family:var(--font-d);font-size:5rem;font-weight:800;color:#fff;line-height:.9;letter-spacing:-.04em;margin-top:4px}
+.d-hero-lbl{font-family:var(--font-m);font-size:.58rem;letter-spacing:.2em;text-transform:uppercase;color:var(--sub)}
+.d-chips{grid-area:chips;display:flex;flex-direction:column;gap:1px;padding:0;background:var(--border)}
+.d-chip{background:var(--s1);padding:12px 18px;display:flex;justify-content:space-between;align-items:center}
+.d-chip-val{font-family:var(--font-m);font-size:1.2rem;font-weight:500;color:var(--text)}
+.d-chip-val.pass{color:var(--pass)}.d-chip-val.fail{color:var(--fail)}.d-chip-val.flag{color:var(--flag)}
+.d-chip-lbl{font-family:var(--font-m);font-size:.56rem;letter-spacing:.14em;text-transform:uppercase;color:var(--sub);text-align:right}
+.d-chart{grid-area:chart;display:flex;flex-direction:column}
+.d-chart-top{display:flex;justify-content:space-between;align-items:flex-start;padding:18px 20px 0}
+.d-chart-title{font-family:var(--font-m);font-size:.58rem;letter-spacing:.18em;text-transform:uppercase;color:var(--sub)}
+.d-chart-legend{display:flex;gap:14px;font-family:var(--font-m);font-size:.58rem;color:var(--sub)}
+.d-chart-legend span{display:flex;align-items:center;gap:5px}
+.lc{width:7px;height:7px;border-radius:1px}
+#iq-canvas{flex:1;width:100%;min-height:0;display:block}
+.d-feed{grid-area:feed;display:flex;flex-direction:column;overflow:hidden}
+.d-feed-head{padding:16px 18px 12px;border-bottom:1px solid var(--border);flex-shrink:0}
+.d-feed-title{font-family:var(--font-m);font-size:.58rem;letter-spacing:.16em;text-transform:uppercase;color:var(--sub)}
+.d-feed-body{flex:1;overflow-y:auto}
+.fi{padding:10px 18px;border-bottom:1px solid rgba(30,30,42,.7);display:flex;flex-direction:column;gap:2px}
+.fi:last-child{border-bottom:none}
+.fi-name{font-size:.78rem;font-weight:500;color:var(--text);display:flex;align-items:center;justify-content:space-between}
+.fi-meta{font-family:var(--font-m);font-size:.62rem;color:var(--sub);display:flex;gap:7px;align-items:center}
+
+/* ── Stat row ────────────────────────────────────────────────────── */
+.stat-row{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--border);border:1px solid var(--border);border-top:none;margin-bottom:22px}
+.sc{background:var(--s1);padding:14px 18px}
+.sc-val{font-family:var(--font-m);font-size:1.4rem;font-weight:500;color:var(--text)}
+.sc-lbl{font-family:var(--font-m);font-size:.57rem;letter-spacing:.14em;text-transform:uppercase;color:var(--sub);margin-top:2px}
+
+/* ── Sections / tables ───────────────────────────────────────────── */
+.section{border:1px solid var(--border);margin-bottom:18px}
+.section-head{display:flex;align-items:center;justify-content:space-between;padding:12px 18px;border-bottom:1px solid var(--border);background:var(--s1)}
+.section-lbl{font-family:var(--font-m);font-size:.58rem;letter-spacing:.16em;text-transform:uppercase;color:var(--sub)}
+.tbl-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse}
+th{text-align:left;padding:9px 14px;font-family:var(--font-m);font-size:.58rem;letter-spacing:.12em;text-transform:uppercase;color:var(--dim);border-bottom:1px solid var(--border);white-space:nowrap;background:var(--s1);font-weight:400}
+td{padding:10px 14px;font-size:.8rem;border-bottom:1px solid rgba(30,30,42,.6);vertical-align:middle}
+tbody tr:last-child td{border-bottom:none}
+tbody tr{transition:background .1s}
+tbody tr:hover td{background:var(--s2)}
+.mono{font-family:var(--font-m);font-size:.78rem}
+
+/* ── Badges ──────────────────────────────────────────────────────── */
+.badge{display:inline-flex;align-items:center;gap:4px;padding:2px 7px;font-family:var(--font-m);font-size:.58rem;letter-spacing:.07em;text-transform:uppercase;border-radius:2px}
+.b-pass{background:var(--pass-bg);color:var(--pass)}
+.b-fail{background:var(--fail-bg);color:var(--fail)}
+.b-flag{background:var(--flag-bg);color:var(--flag)}
+.b-blue{background:var(--blue-bg);color:var(--blue)}
+.b-ghost{background:var(--s3);color:var(--sub)}
+.bdot{width:5px;height:5px;border-radius:50%;background:currentColor}
+
+/* ── Discrimination bar ──────────────────────────────────────────── */
+.disc-bar{display:flex;align-items:center;gap:8px}
+.disc-track{flex:1;height:4px;background:var(--s3);border-radius:2px;overflow:hidden;min-width:60px}
+.disc-fill{height:100%;border-radius:2px;transition:width .4s ease}
+.disc-val{font-family:var(--font-m);font-size:.7rem;min-width:38px;text-align:right}
+
+/* ── Forms ───────────────────────────────────────────────────────── */
+.fg{margin-bottom:14px}
+.fg label{display:block;font-family:var(--font-m);font-size:.58rem;letter-spacing:.13em;text-transform:uppercase;color:var(--sub);margin-bottom:5px}
+.fg input,.fg textarea,.fg select{width:100%;padding:8px 11px;background:var(--s2);border:1px solid var(--border);color:var(--text);font-family:var(--font-u);font-size:.8rem;outline:none;border-radius:2px;transition:border-color .15s,background .15s}
+.fg input:focus,.fg textarea:focus,.fg select:focus{border-color:var(--border-hi);background:var(--s3)}
+.fg textarea{min-height:66px;resize:vertical}
+.fg select option{background:var(--s2)}
+.frow{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.fblock{border:1px solid var(--border);margin-bottom:14px}
+.fblock-head{padding:10px 16px;border-bottom:1px solid var(--border);font-family:var(--font-m);font-size:.58rem;letter-spacing:.15em;text-transform:uppercase;color:var(--sub);background:var(--s1)}
+.fblock-body{padding:16px}
+
+/* ── Modal ───────────────────────────────────────────────────────── */
+.mo{position:fixed;inset:0;z-index:100;background:rgba(4,4,8,.78);backdrop-filter:blur(6px);display:none;align-items:center;justify-content:center}
+.mo.open{display:flex;animation:mfade .15s ease}
+@keyframes mfade{from{opacity:0}to{opacity:1}}
+.modal{width:520px;max-height:90vh;overflow-y:auto;background:var(--s1);border:1px solid var(--border-hi);padding:22px;animation:msl .18s cubic-bezier(.34,1.5,.64,1)}
+@keyframes msl{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.m-title{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
+.m-title-text{font-family:var(--font-m);font-size:.65rem;letter-spacing:.15em;text-transform:uppercase;color:var(--text)}
+.mx{width:22px;height:22px;background:var(--s3);border:1px solid var(--border);border-radius:2px;color:var(--sub);font-size:.8rem;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:color .15s}
+.mx:hover{color:var(--text)}
+.m-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:18px;padding-top:14px;border-top:1px solid var(--border)}
+
+/* ── Upload ──────────────────────────────────────────────────────── */
+.upload-zone{border:1px dashed var(--border-hi);padding:20px;text-align:center;cursor:pointer;transition:background .15s;background:var(--s2)}
+.upload-zone:hover{background:var(--s3)}
+.upload-zone input[type=file]{display:none}
+
+/* ── Lookup ──────────────────────────────────────────────────────── */
+.search-bar{display:flex;gap:0;margin-bottom:16px}
+.search-bar input{flex:1;padding:10px 14px;background:var(--s1);border:1px solid var(--border);border-right:none;color:var(--text);font-family:var(--font-u);font-size:.85rem;outline:none;border-radius:2px 0 0 2px;transition:border-color .15s}
+.search-bar input:focus{border-color:var(--border-hi)}
+.search-bar .btn{border-radius:0 2px 2px 0}
+.member-card{border:1px solid var(--border);margin-bottom:12px;background:var(--s1)}
+.mc-head{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center}
+.mc-name{font-weight:600;font-size:.9rem;color:#fff}
+.mc-id{font-family:var(--font-m);font-size:.65rem;color:var(--sub);margin-top:2px}
+
+/* ── Flagged queue ───────────────────────────────────────────────── */
+.flag-item{border:1px solid var(--border);margin-bottom:8px;background:var(--s1);display:flex;align-items:center;gap:0}
+.flag-stripe{width:3px;align-self:stretch;background:var(--flag);flex-shrink:0}
+.flag-body{flex:1;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.flag-info{display:flex;flex-direction:column;gap:3px}
+.flag-name{font-weight:600;font-size:.85rem;color:#fff}
+.flag-meta{font-family:var(--font-m);font-size:.65rem;color:var(--sub)}
+.flag-actions{display:flex;gap:8px;flex-shrink:0}
+
+/* ── Toast ───────────────────────────────────────────────────────── */
+#toast{position:fixed;bottom:22px;right:22px;z-index:200;padding:9px 14px;font-family:var(--font-m);font-size:.7rem;letter-spacing:.05em;opacity:0;transform:translateY(7px);transition:opacity .18s,transform .18s;pointer-events:none;border-radius:2px}
+#toast.show{opacity:1;transform:translateY(0)}
+#toast.success{background:var(--pass-bg);color:var(--pass);border:1px solid rgba(61,220,132,.2)}
+#toast.error{background:var(--fail-bg);color:var(--fail);border:1px solid rgba(255,100,100,.2)}
+
+/* ── Misc ────────────────────────────────────────────────────────── */
+.empty{text-align:center;padding:44px 20px;font-family:var(--font-m);font-size:.7rem;color:var(--dim);letter-spacing:.1em}
+::-webkit-scrollbar{width:3px;height:3px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border-hi);border-radius:2px}
+font-variant-numeric:tabular-nums;
+
+/* ── Log terminal ────────────────────────────────────────────────── */
+.log-terminal{background:#020204;border:1px solid var(--border);font-family:var(--font-m);font-size:.72rem;height:560px;overflow-y:auto;padding:10px 14px;line-height:1.65}
+.log-terminal::-webkit-scrollbar{width:3px}
+.log-terminal::-webkit-scrollbar-thumb{background:#1e1e2a}
+.log-line{display:flex;gap:10px;padding:1px 0}
+.ll-time{color:var(--dim);flex-shrink:0;user-select:none}
+.ll-lvl{flex-shrink:0;min-width:8ch;font-weight:500}
+.ll-name{color:var(--dim);flex-shrink:0;max-width:22ch;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ll-msg{color:var(--text);flex:1;white-space:pre-wrap;word-break:break-all}
+.ll-lvl.INFO{color:#818cf8}.ll-lvl.WARNING{color:var(--flag)}.ll-lvl.ERROR,.ll-lvl.CRITICAL{color:var(--fail)}.ll-lvl.DEBUG{color:var(--dim)}
+.live-indicator{display:flex;align-items:center;gap:6px;font-family:var(--font-m);font-size:.62rem}
+.live-dot{width:6px;height:6px;border-radius:50%;background:var(--pass);animation:livepulse 2s ease-in-out infinite;flex-shrink:0}
+@keyframes livepulse{0%,100%{opacity:1;box-shadow:0 0 5px var(--pass)}50%{opacity:.4;box-shadow:none}}
+.live-dot.off{background:var(--fail);animation:none}
+.live-dot.wait{background:var(--flag);animation:livepulse 1s ease-in-out infinite}
+
+/* ── Auto-refresh pulse ──────────────────────────────────────────── */
+@keyframes rfpulse{0%{opacity:1}50%{opacity:.4}100%{opacity:1}}
+.refreshing .ph-title::after{content:' ·';color:var(--dim);animation:rfpulse .6s ease-in-out 2}
+</style>
+</head>
+<body>
+
+<!-- ── Login ────────────────────────────────────────────────────── -->
+<div id="login-screen">
+  <div class="login-wrap">
+    <div class="lw-mark">
+      <div class="lw-name">Screening</div>
+      <div class="lw-rule"></div>
+      <div class="lw-tag">Admin Console</div>
+    </div>
+    <div id="lerr"></div>
+    <div class="lf"><label>Username</label><input type="text" id="lu" autocomplete="username" spellcheck="false"></div>
+    <div class="lf"><label>Password</label><input type="password" id="lp" autocomplete="current-password"></div>
+    <button class="btn-auth" onclick="doLogin()"><span>Authenticate</span><span class="btn-auth-arrow">→</span></button>
+  </div>
+</div>
+
+<!-- ── App ──────────────────────────────────────────────────────── -->
+<div id="app">
+  <div id="topbar">
+    <div class="tb-brand">
+      <div class="tb-name">Screening</div>
+      <div class="tb-tag">Intelligence · Console</div>
+    </div>
+    <nav class="tb-tabs">
+      <div class="tb-tab active" onclick="switchTab('dashboard',this)">Dashboard</div>
+      <div class="tb-tab" onclick="switchTab('questions',this)">Questions</div>
+      <div class="tb-tab" onclick="switchTab('analytics',this)">Analytics</div>
+      <div class="tb-tab" onclick="switchTab('results',this)">Results</div>
+      <div class="tb-tab" onclick="switchTab('flagged',this)" id="tab-btn-flagged">
+        Flagged<span class="tb-badge" id="flag-badge" style="display:none">0</span>
+      </div>
+      <div class="tb-tab" onclick="switchTab('lookup',this)">Lookup</div>
+      <div class="tb-tab" onclick="switchTab('config',this)">Config</div>
+      <div class="tb-tab" onclick="switchTab('logs',this)" id="tab-btn-logs">Logs</div>
+    </nav>
+    <div class="tb-right">
+      <div class="tb-status" id="live-status" title="Auto-refresh active"><div class="tb-dot" id="live-status-dot"></div><span id="live-status-text">Live</span></div>
+      <button class="btn-so" onclick="doLogout()">Sign out</button>
+    </div>
+  </div>
+
+  <main>
+
+    <!-- ── Dashboard ─────────────────────────────────────────────── -->
+    <div id="tab-dashboard" class="tab active">
+      <div class="ph">
+        <div><div class="ph-title">Dashboard</div><div class="ph-sub mono" id="dash-ts">—</div></div>
+        <div class="ph-actions"><button class="btn btn-ghost btn-sm" onclick="loadDashboard()">↺ Refresh</button></div>
+      </div>
+      <div class="dash-grid">
+        <div class="dp d-hero">
+          <div class="d-hero-lbl">Total screened</div>
+          <div class="d-hero-num" id="s-total">—</div>
+        </div>
+        <div class="d-chips">
+          <div class="d-chip"><div class="d-chip-val pass mono" id="s-passed">—</div><div class="d-chip-lbl">Passed</div></div>
+          <div class="d-chip"><div class="d-chip-val fail mono" id="s-failed">—</div><div class="d-chip-lbl">Failed</div></div>
+          <div class="d-chip"><div class="d-chip-val mono" id="s-passrate">—</div><div class="d-chip-lbl">Pass rate</div></div>
+          <div class="d-chip"><div class="d-chip-val flag mono" id="s-flagged">—</div><div class="d-chip-lbl">Flagged</div></div>
+        </div>
+        <div class="dp d-chart">
+          <div class="d-chart-top">
+            <div class="d-chart-title">IQ Score Distribution</div>
+            <div class="d-chart-legend">
+              <span><span class="lc" style="background:var(--fail);opacity:.6"></span>Below threshold</span>
+              <span><span class="lc" style="background:var(--pass);opacity:.6"></span>Above threshold</span>
+              <span><span class="lc" style="background:rgba(255,255,255,.2)"></span>Normal curve</span>
+            </div>
+          </div>
+          <canvas id="iq-canvas"></canvas>
+        </div>
+        <div class="d-feed">
+          <div class="d-feed-head"><div class="d-feed-title">Activity</div></div>
+          <div class="d-feed-body" id="feed-body"><div class="empty">No activity</div></div>
+        </div>
+      </div>
+      <div class="stat-row">
+        <div class="sc"><div class="sc-val mono" id="s-avg">—</div><div class="sc-lbl">Average score</div></div>
+        <div class="sc"><div class="sc-val mono" id="s-questions">—</div><div class="sc-lbl">Active questions</div></div>
+        <div class="sc"><div class="sc-val mono" id="s-threshold">—</div><div class="sc-lbl">Pass threshold</div></div>
+      </div>
+    </div>
+
+    <!-- ── Questions ─────────────────────────────────────────────── -->
+    <div id="tab-questions" class="tab">
+      <div class="ph">
+        <div><div class="ph-title">Questions</div><div class="ph-sub mono" id="q-count-lbl">—</div></div>
+        <div class="ph-actions">
+          <button class="btn btn-ghost btn-sm" onclick="openImport()">↑ Import CSV</button>
+          <button class="btn btn-primary btn-sm" onclick="openQModal()">+ Add question</button>
+        </div>
+      </div>
+      <div class="section">
+        <div class="tbl-wrap">
+          <table><thead><tr><th>Question</th><th>Category</th><th>Diff</th><th>Answer</th><th>Status</th><th></th></tr></thead>
+          <tbody id="q-table"></tbody></table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Analytics ─────────────────────────────────────────────── -->
+    <div id="tab-analytics" class="tab">
+      <div class="ph">
+        <div><div class="ph-title">Analytics</div><div class="ph-sub">Per-question performance — point-biserial discrimination index</div></div>
+        <div class="ph-actions"><button class="btn btn-ghost btn-sm" onclick="loadAnalytics()">↺ Refresh</button></div>
+      </div>
+      <div class="section">
+        <div class="tbl-wrap">
+          <table><thead><tr>
+            <th>Question</th><th>Category</th><th>Diff</th>
+            <th>Attempts</th><th>Correct %</th><th>Avg time</th>
+            <th style="min-width:160px">Discrimination ↑</th>
+          </tr></thead>
+          <tbody id="a-table"></tbody></table>
+        </div>
+      </div>
+      <div style="padding:12px 18px;background:var(--s1);border:1px solid var(--border);border-top:none">
+        <p style="font-family:var(--font-m);font-size:.62rem;color:var(--sub);line-height:1.7">
+          <strong style="color:var(--text)">Discrimination index</strong> — point-biserial correlation between getting a question correct and total IQ score.<br>
+          <span style="color:var(--pass)">≥ 0.30</span> good · <span style="color:var(--flag)">0.10–0.29</span> marginal · <span style="color:var(--fail)">&lt; 0.10</span> poor (consider revising or removing)
+        </p>
+      </div>
+    </div>
+
+    <!-- ── Results ───────────────────────────────────────────────── -->
+    <div id="tab-results" class="tab">
+      <div class="ph">
+        <div><div class="ph-title">Results</div><div class="ph-sub">All completed screening sessions</div></div>
+        <div class="ph-actions"><button class="btn btn-ghost btn-sm" onclick="exportCSV()">↓ Export CSV</button></div>
+      </div>
+      <div class="section">
+        <div class="tbl-wrap">
+          <table><thead><tr>
+            <th>Member</th><th>User ID</th><th>Score</th><th>Percentile</th>
+            <th>Correct</th><th>θ</th><th>Verdict</th><th>Flags</th><th>Date</th>
+          </tr></thead>
+          <tbody id="r-table"></tbody></table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Flagged queue ──────────────────────────────────────────── -->
+    <div id="tab-flagged" class="tab">
+      <div class="ph">
+        <div><div class="ph-title">Flagged Queue</div><div class="ph-sub">Results awaiting review — unusually fast response times</div></div>
+        <div class="ph-actions">
+          <label style="display:flex;align-items:center;gap:8px;font-family:var(--font-m);font-size:.65rem;color:var(--sub);cursor:pointer">
+            <input type="checkbox" id="show-reviewed" onchange="loadFlagged()"> Show reviewed
+          </label>
+          <button class="btn btn-ghost btn-sm" onclick="loadFlagged()">↺ Refresh</button>
+        </div>
+      </div>
+      <div id="flagged-list"><div class="empty">Loading...</div></div>
+    </div>
+
+    <!-- ── Member lookup ──────────────────────────────────────────── -->
+    <div id="tab-lookup" class="tab">
+      <div class="ph">
+        <div><div class="ph-title">Member Lookup</div><div class="ph-sub">Search by Discord user ID or username</div></div>
+      </div>
+      <div class="search-bar">
+        <input type="text" id="lookup-q" placeholder="User ID (e.g. 123456789) or username fragment..." onkeydown="if(event.key==='Enter')doLookup()">
+        <button class="btn btn-primary" onclick="doLookup()">Search</button>
+      </div>
+      <div id="lookup-results"></div>
+    </div>
+
+    <!-- ── Config ────────────────────────────────────────────────── -->
+    <div id="tab-config" class="tab">
+      <div class="ph">
+        <div><div class="ph-title">Configuration</div><div class="ph-sub">Changes take effect within 60 seconds (bot config cache TTL)</div></div>
+        <div class="ph-actions"><button class="btn btn-success btn-sm" onclick="saveConfig()">✓ Save changes</button></div>
+      </div>
+      <div class="fblock">
+        <div class="fblock-head">Scoring thresholds</div>
+        <div class="fblock-body">
+          <div class="frow">
+            <div class="fg"><label>Minimum score (pass threshold)</label><input type="number" id="cfg-iq_threshold_min" min="40" max="160"></div>
+            <div class="fg"><label>Score ceiling</label><input type="number" id="cfg-iq_threshold_max" min="40" max="160"></div>
+          </div>
+        </div>
+      </div>
+      <div class="fblock">
+        <div class="fblock-head">Test behavior</div>
+        <div class="fblock-body">
+          <div class="frow">
+            <div class="fg"><label>Questions per test</label><input type="number" id="cfg-questions_per_test" min="1" max="100"></div>
+            <div class="fg"><label>Seconds per question</label><input type="number" id="cfg-time_per_question" min="10" max="300"></div>
+          </div>
+          <div class="frow">
+            <div class="fg"><label>Allow retest</label>
+              <select id="cfg-allow_retest"><option value="false">No</option><option value="true">Yes</option></select>
+            </div>
+            <div class="fg"><label>Retest cooldown (hours)</label><input type="number" id="cfg-retest_cooldown_hours" min="0"></div>
+          </div>
+          <div class="frow">
+            <div class="fg"><label>Score expires after days (0 = never)</label><input type="number" id="cfg-score_expires_days" min="0"></div>
+            <div class="fg"><label>Flag if avg answer time below (seconds)</label><input type="number" id="cfg-flag_threshold_seconds" min="1" step="0.5"></div>
+          </div>
+        </div>
+      </div>
+      <div class="fblock">
+        <div class="fblock-head">Discord role IDs</div>
+        <div class="fblock-body">
+          <div class="frow">
+            <div class="fg"><label>Passed role ID</label><input type="text" id="cfg-passed_role_id" placeholder="Snowflake"></div>
+            <div class="fg"><label>Failed / muted role ID</label><input type="text" id="cfg-failed_role_id" placeholder="Snowflake"></div>
+          </div>
+        </div>
+      </div>
+      <div class="fblock">
+        <div class="fblock-head">Discord channel IDs</div>
+        <div class="fblock-body">
+          <div class="frow">
+            <div class="fg"><label>Test prompt channel</label><input type="text" id="cfg-test_channel_id" placeholder="Announce on join"></div>
+            <div class="fg"><label>Results broadcast channel</label><input type="text" id="cfg-results_channel_id" placeholder="Post results here"></div>
+          </div>
+        </div>
+      </div>
+      <div class="fblock">
+        <div class="fblock-head">Webhook alerts</div>
+        <div class="fblock-body">
+          <div class="fg">
+            <label>Discord webhook URL (fires on fail or flag)</label>
+            <input type="text" id="cfg-webhook_url" placeholder="https://discord.com/api/webhooks/...">
+          </div>
+          <p style="font-family:var(--font-m);font-size:.62rem;color:var(--sub);margin-top:-6px">Leave blank to disable. Backend posts a result embed automatically — no bot restart needed.</p>
+        </div>
+      </div>
+      <div class="fblock">
+        <div class="fblock-head">Public shaming</div>
+        <div class="fblock-body">
+          <p style="font-family:var(--font-m);font-size:.62rem;color:var(--sub);margin-top:-2px;margin-bottom:2px">Prefer setting these via <code>/shame-config</code> in Discord — it picks the channel and role natively. These fields are a manual fallback.</p>
+          <div class="frow">
+            <div class="fg"><label>Shame channel ID</label><input type="text" id="cfg-shame_channel_id" placeholder="Snowflake"></div>
+            <div class="fg"><label>Shame ping role ID</label><input type="text" id="cfg-shame_role_id" placeholder="Snowflake (optional)"></div>
+          </div>
+          <div class="fg">
+            <label>Nickname branding on fail</label>
+            <select id="cfg-shame_nickname"><option value="false">Off</option><option value="true">On — appends [IQ ##] to nickname</option></select>
+          </div>
+        </div>
+      </div>
+      <div class="fblock">
+        <div class="fblock-head">Digest & audit</div>
+        <div class="fblock-body">
+          <div class="frow">
+            <div class="fg"><label>Audit log channel ID</label><input type="text" id="cfg-audit_channel_id" placeholder="Admin actions post here"></div>
+            <div class="fg"><label>Weekly digest channel ID</label><input type="text" id="cfg-digest_channel_id" placeholder="Dumbest of the Week"></div>
+          </div>
+          <div class="frow">
+            <div class="fg"><label>Digest day</label>
+              <select id="cfg-digest_day">
+                <option value="sunday">Sunday</option><option value="monday">Monday</option><option value="tuesday">Tuesday</option>
+                <option value="wednesday">Wednesday</option><option value="thursday">Thursday</option><option value="friday">Friday</option><option value="saturday">Saturday</option>
+              </select>
+            </div>
+            <div class="fg"><label>Digest hour (UTC, 0-23)</label><input type="number" id="cfg-digest_hour" min="0" max="23"></div>
+          </div>
+          <p style="font-family:var(--font-m);font-size:.62rem;color:var(--sub);margin-top:-2px">Backend-down alerts are configured separately via <code>ALERT_WEBHOOK_URL</code> in <code>.env</code> — the launcher reads that directly and doesn't need a backend restart to pick it up.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Logs ─────────────────────────────────────────────────────── -->
+    <div id="tab-logs" class="tab">
+      <div class="ph">
+        <div><div class="ph-title">System Logs</div><div class="ph-sub">Live backend log stream via SSE</div></div>
+        <div class="ph-actions">
+          <div class="live-indicator" id="log-conn-status">
+            <div class="live-dot wait" id="log-conn-dot"></div>
+            <span id="log-conn-text" style="color:var(--flag)">Connecting...</span>
+          </div>
+          <button class="btn btn-ghost btn-sm" onclick="clearLogs()">Clear</button>
+        </div>
+      </div>
+      <div class="log-terminal" id="log-terminal"></div>
+    </div>
+
+  </main>
+</div>
+
+<!-- Question modal -->
+<div class="mo" id="modal-q">
+  <div class="modal">
+    <div class="m-title"><span class="m-title-text" id="mq-title">Add question</span><span class="mx" onclick="closeQModal()">✕</span></div>
+    <input type="hidden" id="mq-id">
+    <div class="fg"><label>Question text</label><textarea id="mq-text" placeholder="Enter the question..."></textarea></div>
+    <div class="frow"><div class="fg"><label>Option A</label><input type="text" id="mq-a"></div><div class="fg"><label>Option B</label><input type="text" id="mq-b"></div></div>
+    <div class="frow"><div class="fg"><label>Option C</label><input type="text" id="mq-c"></div><div class="fg"><label>Option D</label><input type="text" id="mq-d"></div></div>
+    <div class="frow">
+      <div class="fg"><label>Correct answer</label><select id="mq-ans"><option>A</option><option>B</option><option>C</option><option>D</option></select></div>
+      <div class="fg"><label>Difficulty</label><select id="mq-diff"><option value="1">1 — Very easy</option><option value="2">2 — Easy</option><option value="3" selected>3 — Medium</option><option value="4">4 — Hard</option><option value="5">5 — Very hard</option></select></div>
+    </div>
+    <div class="fg"><label>Category</label><input type="text" id="mq-cat" value="general"></div>
+    <div class="m-actions"><button class="btn btn-ghost" onclick="closeQModal()">Cancel</button><button class="btn btn-primary" onclick="saveQuestion()">Save question</button></div>
+  </div>
+</div>
+
+<!-- CSV import modal -->
+<div class="mo" id="modal-csv">
+  <div class="modal">
+    <div class="m-title"><span class="m-title-text">Import questions · CSV</span><span class="mx" onclick="closeCSV()">✕</span></div>
+    <p style="font-family:var(--font-m);font-size:.65rem;color:var(--sub);margin-bottom:14px;line-height:1.7">
+      Required: <span style="color:var(--text)">text, option_a, option_b, option_c, option_d, correct_answer</span><br>
+      Optional: <span style="color:var(--text)">difficulty (1–5), category</span>
+    </p>
+    <div class="upload-zone" onclick="document.getElementById('csv-inp').click()">
+      <input type="file" id="csv-inp" accept=".csv" onchange="handleCSV()">
+      <div style="font-size:1.2rem;color:var(--sub);margin-bottom:5px">↑</div>
+      <div style="font-size:.78rem;color:var(--text);font-weight:500">Select CSV file</div>
+      <div id="csv-fn" style="font-family:var(--font-m);font-size:.62rem;color:var(--dim);margin-top:4px">No file chosen</div>
+    </div>
+    <div id="csv-result" style="margin-top:10px;display:none"></div>
+    <div class="m-actions"><button class="btn btn-ghost" onclick="closeCSV()">Close</button><button class="btn btn-primary" id="csv-btn" onclick="previewCSV()" disabled>Preview</button></div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+let token = localStorage.getItem('iq_token') || '';
+let _results = [], _chartThreshold = 85;
+
+function ah(){ return {'Content-Type':'application/json','Authorization':'Bearer '+token}; }
+async function api(path,opts={}){
+  const r=await fetch(path,{headers:ah(),...opts});
+  if(r.status===401){doLogout();return null;}
+  return r;
+}
+
+async function doLogin(){
+  const u=document.getElementById('lu').value.trim();
+  const p=document.getElementById('lp').value;
+  const err=document.getElementById('lerr');
+  err.textContent='';
+  try{
+    const r=await fetch('/api/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:u,password:p})});
+    if(!r.ok){err.textContent='Invalid credentials.';return;}
+    token=(await r.json()).access_token;
+    localStorage.setItem('iq_token',token);
+    showApp();
+  }catch{err.textContent='Server unreachable.';}
+}
+document.getElementById('lp').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();});
+document.getElementById('lu').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();});
+
+function doLogout(){
+  token='';localStorage.removeItem('iq_token');
+  document.getElementById('app').classList.remove('visible');
+  document.getElementById('app').style.display='none';
+  const ls=document.getElementById('login-screen');
+  ls.classList.remove('out');ls.style.display='flex';
+}
+
+async function showApp(){
+  const r=await fetch('/api/auth/verify',{headers:ah()});
+  if(!r.ok){doLogout();return;}
+  document.getElementById('login-screen').classList.add('out');
+  setTimeout(()=>document.getElementById('login-screen').style.display='none',350);
+  const app=document.getElementById('app');
+  app.style.display='flex';
+  requestAnimationFrame(()=>app.classList.add('visible'));
+  loadDashboard();
+  loadFlaggedBadge();
+  startAutoRefresh();
+}
+
+let _activeTab = 'dashboard';
+function switchTab(name,el){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.tb-tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('tab-'+name).classList.add('active');
+  if(el)el.classList.add('active');
+  _activeTab = name;
+  if(name==='logs' && !_logEs) connectLogStream();
+  ({dashboard:loadDashboard,questions:loadQuestions,analytics:loadAnalytics,
+    results:loadResults,flagged:loadFlagged,config:loadConfig}[name]?.());
+}
+
+let _tid;
+function toast(msg,type='success'){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.className='show '+type;
+  clearTimeout(_tid);_tid=setTimeout(()=>t.className='',2600);
+}
+
+async function loadDashboard(){
+  document.getElementById('dash-ts').textContent='Updated '+new Date().toLocaleTimeString(undefined,{hour:'2-digit',minute:'2-digit'});
+  const [sR,rR,qR,cR]=await Promise.all([
+    api('/api/results/stats/admin'),
+    api('/api/results/?limit=200'),
+    api('/api/questions/?active_only=true'),
+    api('/api/config/'),
+  ]);
+  if(!sR||!rR||!qR||!cR)return;
+  const [s,r,q,c]=[await sR.json(),await rR.json(),await qR.json(),await cR.json()];
+  _results=r;_chartThreshold=parseInt(c.iq_threshold_min||'85');
+  animN('s-total',s.total);animN('s-passed',s.passed);animN('s-failed',s.failed);animN('s-flagged',s.flagged);
+  document.getElementById('s-passrate').textContent=s.pass_rate+'%';
+  document.getElementById('s-avg').textContent=s.avg_iq||'—';
+  document.getElementById('s-questions').textContent=q.length;
+  document.getElementById('s-threshold').textContent=_chartThreshold;
+  updateFlagBadge(s.flagged);
+  drawHistogram(r,_chartThreshold);
+  buildFeed(r.slice(0,20));
+}
+
+function animN(id,target){
+  const el=document.getElementById(id);
+  if(target==null){el.textContent='—';return;}
+  const start=Date.now(),dur=500;
+  function tick(){
+    const t=Math.min(1,(Date.now()-start)/dur);
+    el.textContent=Math.round(target*(1-Math.pow(1-t,3)));
+    if(t<1)requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+}
+
+function drawHistogram(results,threshold){
+  const canvas=document.getElementById('iq-canvas');if(!canvas)return;
+  const dpr=window.devicePixelRatio||1;
+  const parent=canvas.parentElement;
+  const cw=parent.clientWidth,ch=Math.max(160,parent.clientHeight-50);
+  canvas.style.width=cw+'px';canvas.style.height=ch+'px';
+  canvas.width=cw*dpr;canvas.height=ch*dpr;
+  const ctx=canvas.getContext('2d');ctx.scale(dpr,dpr);
+  const W=cw,H=ch,pad={t:14,r:16,b:32,l:32};
+  const cW=W-pad.l-pad.r,cH=H-pad.t-pad.b;
+  const BINS=12,MIN=40,RANGE=120;
+  const bins=new Array(BINS).fill(0);
+  results.forEach(r=>{
+    const b=Math.min(BINS-1,Math.max(0,Math.floor((r.iq_score-MIN)/(RANGE/BINS))));
+    bins[b]++;
+  });
+  const maxBin=Math.max(1,...bins);
+  const bW=cW/BINS;
+  ctx.clearRect(0,0,W,H);
+  for(let i=0;i<=4;i++){
+    const y=pad.t+(cH/4)*i;
+    ctx.strokeStyle='rgba(255,255,255,.04)';ctx.lineWidth=1;
+    ctx.beginPath();ctx.moveTo(pad.l,y);ctx.lineTo(pad.l+cW,y);ctx.stroke();
+  }
+  const tx=pad.l+((threshold-MIN)/RANGE)*cW;
+  ctx.strokeStyle='rgba(255,100,100,.4)';ctx.lineWidth=1;ctx.setLineDash([4,4]);
+  ctx.beginPath();ctx.moveTo(tx,pad.t);ctx.lineTo(tx,pad.t+cH);ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle='rgba(255,100,100,.5)';ctx.font=`8px "DM Mono"`;ctx.textAlign='center';
+  ctx.fillText(threshold,tx,pad.t-3);
+  bins.forEach((count,i)=>{
+    const x=pad.l+i*bW,binMin=MIN+i*(RANGE/BINS);
+    const isPass=binMin>=threshold,bH=(count/maxBin)*cH,y=pad.t+cH-bH,gap=2;
+    if(count===0)return;
+    ctx.fillStyle=isPass?'rgba(61,220,132,.18)':'rgba(255,100,100,.13)';
+    ctx.fillRect(x+gap,y,bW-gap*2,bH);
+    ctx.fillStyle=isPass?'rgba(61,220,132,.75)':'rgba(255,100,100,.6)';
+    ctx.fillRect(x+gap,y,bW-gap*2,2);
+    if(bH>12){
+      ctx.fillStyle='rgba(255,255,255,.3)';ctx.font=`7px "DM Mono"`;ctx.textAlign='center';
+      ctx.fillText(count,x+bW/2,y-2);
+    }
+  });
+  if(results.length>3){
+    const iqArr=results.map(r=>r.iq_score);
+    const mean=iqArr.reduce((a,b)=>a+b,0)/iqArr.length;
+    const sd=Math.sqrt(iqArr.map(x=>(x-mean)**2).reduce((a,b)=>a+b)/iqArr.length);
+    if(sd>0){
+      const scale=results.length*(RANGE/BINS)/(sd*Math.sqrt(2*Math.PI));
+      ctx.beginPath();ctx.strokeStyle='rgba(255,255,255,.15)';ctx.lineWidth=1.5;
+      for(let px=0;px<=cW;px+=1.5){
+        const iq=MIN+(px/cW)*RANGE;
+        const n=Math.exp(-0.5*((iq-mean)/sd)**2)/(sd*Math.sqrt(2*Math.PI));
+        const ny=pad.t+cH-(n*scale/maxBin)*cH;
+        px===0?ctx.moveTo(pad.l+px,ny):ctx.lineTo(pad.l+px,ny);
+      }
+      ctx.stroke();
+    }
+  }
+  ctx.fillStyle='rgba(255,255,255,.25)';ctx.font=`8px "DM Mono"`;
+  for(let i=0;i<=BINS;i+=2){ctx.textAlign='center';ctx.fillText(MIN+i*(RANGE/BINS),pad.l+i*bW,pad.t+cH+18);}
+}
+window.addEventListener('resize',()=>{if(_results.length>=0)drawHistogram(_results,_chartThreshold);});
+
+function buildFeed(results){
+  const body=document.getElementById('feed-body');
+  if(!results.length){body.innerHTML='<div class="empty">No activity</div>';return;}
+  body.innerHTML=results.map(r=>`<div class="fi">
+    <div class="fi-name"><span>${esc(r.discord_username)}</span><span class="badge ${r.passed?'b-pass':'b-fail'}">${r.passed?'PASS':'FAIL'}</span></div>
+    <div class="fi-meta"><span class="mono">${r.iq_score}</span><span style="color:var(--dim)">·</span><span>Top ${100-(r.percentile||0)}%</span>${r.flagged?'<span style="color:var(--flag)">⚑</span>':''}<span style="margin-left:auto">${fmtAgo(r.completed_at)}</span></div>
+  </div>`).join('');
+}
+
+let allQ=[];
+async function loadQuestions(){
+  const r=await api('/api/questions/?active_only=false');if(!r)return;
+  allQ=await r.json();renderQ();
+}
+function renderQ(){
+  document.getElementById('q-count-lbl').textContent=`${allQ.filter(q=>q.active).length} active · ${allQ.length} total`;
+  const tb=document.getElementById('q-table');
+  if(!allQ.length){tb.innerHTML=`<tr><td colspan="6"><div class="empty">No questions — add one or import CSV</div></td></tr>`;return;}
+  tb.innerHTML=allQ.map(q=>`<tr>
+    <td style="max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(q.text)}">${esc(q.text)}</td>
+    <td><span class="badge b-ghost mono">${esc(q.category)}</span></td>
+    <td class="mono" style="color:var(--sub)">${'■'.repeat(q.difficulty)}${'□'.repeat(5-q.difficulty)}</td>
+    <td><span class="mono" style="font-weight:500;color:var(--pass)">${q.correct_answer}</span></td>
+    <td><span class="badge ${q.active?'b-blue':'b-ghost'}">${q.active?'Active':'Off'}</span></td>
+    <td style="white-space:nowrap"><button class="btn btn-ghost btn-sm" onclick="editQ(${q.id})">Edit</button> <button class="btn btn-danger btn-sm" onclick="delQ(${q.id})">Delete</button></td>
+  </tr>`).join('');
+}
+function openQModal(q=null){
+  document.getElementById('mq-title').textContent=q?'Edit question':'Add question';
+  document.getElementById('mq-id').value=q?.id||'';
+  document.getElementById('mq-text').value=q?.text||'';
+  document.getElementById('mq-a').value=q?.option_a||'';
+  document.getElementById('mq-b').value=q?.option_b||'';
+  document.getElementById('mq-c').value=q?.option_c||'';
+  document.getElementById('mq-d').value=q?.option_d||'';
+  document.getElementById('mq-ans').value=q?.correct_answer||'A';
+  document.getElementById('mq-diff').value=q?.difficulty||'3';
+  document.getElementById('mq-cat').value=q?.category||'general';
+  document.getElementById('modal-q').classList.add('open');
+}
+function editQ(id){openQModal(allQ.find(q=>q.id===id));}
+function closeQModal(){document.getElementById('modal-q').classList.remove('open');}
+async function saveQuestion(){
+  const id=document.getElementById('mq-id').value;
+  const p={text:document.getElementById('mq-text').value.trim(),option_a:document.getElementById('mq-a').value.trim(),option_b:document.getElementById('mq-b').value.trim(),option_c:document.getElementById('mq-c').value.trim(),option_d:document.getElementById('mq-d').value.trim(),correct_answer:document.getElementById('mq-ans').value,difficulty:parseInt(document.getElementById('mq-diff').value),category:document.getElementById('mq-cat').value.trim()||'general'};
+  if(!p.text||!p.option_a||!p.option_b||!p.option_c||!p.option_d){toast('Fill in all fields','error');return;}
+  const r=await api(id?`/api/questions/${id}`:'/api/questions/',{method:id?'PUT':'POST',body:JSON.stringify(p)});
+  if(!r||!r.ok){toast('Save failed','error');return;}
+  closeQModal();toast(id?'Question updated':'Question added');loadQuestions();
+}
+async function delQ(id){
+  if(!confirm('Delete this question?'))return;
+  const r=await api(`/api/questions/${id}`,{method:'DELETE'});
+  if(r?.status===204){toast('Deleted');loadQuestions();}else toast('Delete failed','error');
+}
+
+let _csv=null;
+function openImport(){document.getElementById('modal-csv').classList.add('open');}
+function closeCSV(){
+  document.getElementById('modal-csv').classList.remove('open');
+  document.getElementById('csv-result').style.display='none';
+  document.getElementById('csv-inp').value='';
+  document.getElementById('csv-fn').textContent='No file chosen';
+  const btn=document.getElementById('csv-btn');
+  btn.disabled=true;btn.textContent='Preview';btn.onclick=previewCSV;
+  _csv=null;
+}
+function handleCSV(){
+  _csv=document.getElementById('csv-inp').files[0];
+  document.getElementById('csv-fn').textContent=_csv?_csv.name:'No file chosen';
+  const btn=document.getElementById('csv-btn');
+  btn.disabled=!_csv;btn.textContent='Preview';btn.onclick=previewCSV;
+  document.getElementById('csv-result').style.display='none';
+}
+async function _runImport(dryRun){
+  if(!_csv)return null;
+  const fd=new FormData();fd.append('file',_csv);
+  const r=await fetch(`/api/questions/import?dry_run=${dryRun}`,{method:'POST',headers:{Authorization:'Bearer '+token},body:fd});
+  if(!r||!r.ok)return null;
+  return r.json();
+}
+async function previewCSV(){
+  const d=await _runImport(true);
+  if(!d){toast('Preview failed','error');return;}
+  const el=document.getElementById('csv-result');el.style.display='block';
+  el.innerHTML=`<div style="padding:10px 12px;background:var(--s2);border:1px solid var(--border);font-family:var(--font-m);font-size:.68rem;line-height:1.8"><div style="color:var(--sub)">This is a preview — nothing has been written yet.</div><div style="color:var(--pass);margin-top:4px">Would add: ${d.added}</div><div style="color:var(--sub)">Would skip: ${d.skipped}</div>${d.errors.length?`<div style="color:var(--fail);margin-top:3px">${d.errors.slice(0,5).map(esc).join('<br>')}</div>`:''}</div>`;
+  const btn=document.getElementById('csv-btn');
+  btn.textContent=`Confirm Import (${d.added})`;btn.onclick=confirmImport;btn.disabled=d.added===0;
+}
+async function confirmImport(){
+  const d=await _runImport(false);
+  if(!d){toast('Import failed','error');return;}
+  const el=document.getElementById('csv-result');el.style.display='block';
+  el.innerHTML=`<div style="padding:10px 12px;background:var(--s2);border:1px solid var(--border);font-family:var(--font-m);font-size:.68rem;line-height:1.8"><div style="color:var(--pass)">Added: ${d.added}</div><div style="color:var(--sub)">Skipped: ${d.skipped}</div>${d.errors.length?`<div style="color:var(--fail);margin-top:3px">${d.errors.slice(0,5).map(esc).join('<br>')}</div>`:''}</div>`;
+  toast(`Imported ${d.added} questions`);loadQuestions();
+  const btn=document.getElementById('csv-btn');
+  btn.textContent='Preview';btn.onclick=previewCSV;btn.disabled=true;_csv=null;
+  document.getElementById('csv-inp').value='';
+  document.getElementById('csv-fn').textContent='No file chosen';
+}
+
+async function loadAnalytics(){
+  const r=await api('/api/questions/analytics');if(!r)return;
+  const data=await r.json();
+  const tb=document.getElementById('a-table');
+  if(!data.length){tb.innerHTML=`<tr><td colspan="7"><div class="empty">No data yet — analytics populate as members take the test</div></td></tr>`;return;}
+  tb.innerHTML=data.map(q=>{
+    const disc=q.discrimination;
+    const discColor=disc>=0.3?'var(--pass)':disc>=0.1?'var(--flag)':'var(--fail)';
+    const discPct=Math.max(0,Math.min(100,(disc+1)/2*100));
+    return `<tr>
+      <td style="max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(q.text)}">${esc(q.text)}</td>
+      <td><span class="badge b-ghost mono">${esc(q.category)}</span></td>
+      <td class="mono" style="color:var(--sub)">${'■'.repeat(q.difficulty)}${'□'.repeat(5-q.difficulty)}</td>
+      <td class="mono">${q.total_attempts}</td>
+      <td><span class="mono" style="color:${q.correct_rate>=50?'var(--pass)':'var(--fail)'}">${q.correct_rate}%</span></td>
+      <td class="mono" style="color:var(--sub)">${q.avg_time}s</td>
+      <td><div class="disc-bar"><div class="disc-track"><div class="disc-fill" style="width:${discPct}%;background:${discColor}"></div></div><span class="disc-val" style="color:${discColor}">${disc>=0?'+':''}${disc}</span></div></td>
+    </tr>`;
+  }).join('');
+}
+
+async function loadResults(){
+  const r=await api('/api/results/?limit=500');if(!r)return;
+  const results=await r.json();_results=results;
+  const tb=document.getElementById('r-table');
+  if(!results.length){tb.innerHTML=`<tr><td colspan="9"><div class="empty">No results yet</div></td></tr>`;return;}
+  tb.innerHTML=results.map(r=>`<tr>
+    <td style="font-weight:500">${esc(r.discord_username)}</td>
+    <td class="mono" style="color:var(--dim);font-size:.7rem">${esc(r.discord_user_id)}</td>
+    <td class="mono">${r.iq_score} <span style="color:var(--sub);font-size:.7rem">${band(r.iq_score)}</span></td>
+    <td class="mono" style="color:var(--sub)">Top ${100-(r.percentile||0)}%</td>
+    <td class="mono">${r.answers_correct}/${r.total_questions}</td>
+    <td class="mono" style="color:var(--dim)">${(+r.raw_score).toFixed(2)}</td>
+    <td><span class="badge ${r.passed?'b-pass':'b-fail'}"><span class="bdot"></span>${r.passed?'PASS':'FAIL'}</span></td>
+    <td>${r.flagged?`<span class="badge b-flag">${r.reviewed?'✓ Reviewed':'⚑ Flagged'}</span>`:'<span style="color:var(--dim)">—</span>'}</td>
+    <td class="mono" style="color:var(--sub);font-size:.7rem">${fmtDate(r.completed_at)}</td>
+  </tr>`).join('');
+}
+
+function exportCSV(){
+  if(!_results.length){toast('No results to export','error');return;}
+  const cols=['discord_username','discord_user_id','iq_score','percentile','answers_correct','total_questions','raw_score','passed','flagged','reviewed','completed_at'];
+  const rows=[cols.join(','),..._results.map(r=>cols.map(c=>JSON.stringify(r[c]??'')).join(','))];
+  const blob=new Blob([rows.join('\n')],{type:'text/csv'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');a.href=url;a.download='screening-results.csv';a.click();
+  URL.revokeObjectURL(url);
+  toast('Exported '+_results.length+' rows');
+}
+
+async function loadFlaggedBadge(){
+  const r=await api('/api/results/flagged');if(!r)return;
+  const data=await r.json();
+  updateFlagBadge(data.length);
+}
+function updateFlagBadge(count){
+  const badge=document.getElementById('flag-badge');
+  if(count>0){badge.textContent=count;badge.style.display='inline-flex';}
+  else badge.style.display='none';
+}
+async function loadFlagged(){
+  const reviewed=document.getElementById('show-reviewed').checked;
+  const r=await api(`/api/results/flagged?reviewed=${reviewed}`);if(!r)return;
+  const data=await r.json();
+  const container=document.getElementById('flagged-list');
+  if(!data.length){
+    container.innerHTML=`<div class="empty">${reviewed?'No flagged results':'No pending flags — all reviewed'}</div>`;
+    updateFlagBadge(0);return;
+  }
+  updateFlagBadge(data.filter(x=>!x.reviewed).length);
+  container.innerHTML=data.map(r=>`
+    <div class="flag-item" id="fi-${r.id}">
+      <div class="flag-stripe"></div>
+      <div class="flag-body">
+        <div class="flag-info">
+          <div class="flag-name">${esc(r.discord_username)}</div>
+          <div class="flag-meta">
+            Score: <strong class="mono">${r.iq_score}</strong> (${band(r.iq_score)}) ·
+            ${r.answers_correct}/${r.total_questions} correct ·
+            ${r.passed?'<span style="color:var(--pass)">Passed</span>':'<span style="color:var(--fail)">Failed</span>'} ·
+            <span class="mono" style="color:var(--sub)">${fmtDate(r.completed_at)}</span>
+            ${r.reviewed?'<span style="color:var(--pass);margin-left:4px">· ✓ Reviewed</span>':''}
+          </div>
+        </div>
+        <div class="flag-actions">
+          ${!r.reviewed?`<button class="btn btn-success btn-sm" onclick="reviewFlag(${r.id})">✓ Mark reviewed</button>`:''}
+          <button class="btn btn-ghost btn-sm" onclick="doLookupById('${esc(r.discord_user_id)}')">View history</button>
+        </div>
+      </div>
+    </div>`).join('');
+}
+async function reviewFlag(id){
+  const r=await api(`/api/results/${id}/review`,{method:'PATCH'});
+  if(r?.ok){toast('Marked as reviewed');loadFlagged();}
+  else toast('Failed','error');
+}
+
+async function doLookup(){
+  const q=document.getElementById('lookup-q').value.trim();
+  if(!q){toast('Enter a user ID or username','error');return;}
+  doLookupById(q);
+}
+async function doLookupById(q){
+  switchTab('lookup',document.querySelector('.tb-tab:nth-child(6)'));
+  document.getElementById('lookup-q').value=q;
+  const r=await api(`/api/results/member?q=${encodeURIComponent(q)}`);if(!r)return;
+  const results=await r.json();
+  const container=document.getElementById('lookup-results');
+  if(!results.length){container.innerHTML=`<div class="empty">No results found for "${esc(q)}"</div>`;return;}
+  const byUser={};
+  results.forEach(r=>{(byUser[r.discord_user_id]=byUser[r.discord_user_id]||{username:r.discord_username,id:r.discord_user_id,results:[]}).results.push(r);});
+  container.innerHTML=Object.values(byUser).map(u=>`
+    <div class="member-card">
+      <div class="mc-head">
+        <div><div class="mc-name">${esc(u.username)}</div><div class="mc-id mono">${esc(u.id)}</div></div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <span class="badge b-ghost mono">${u.results.length} test${u.results.length!==1?'s':''}</span>
+          <span class="badge ${u.results[0].passed?'b-pass':'b-fail'}">${u.results[0].passed?'Latest: Pass':'Latest: Fail'}</span>
+        </div>
+      </div>
+      <div class="tbl-wrap">
+        <table><thead><tr><th>Score</th><th>Correct</th><th>Percentile</th><th>θ</th><th>Verdict</th><th>Flags</th><th>Date</th></tr></thead>
+        <tbody>${u.results.map(r=>`<tr>
+          <td class="mono">${r.iq_score} <span style="color:var(--sub);font-size:.7rem">${band(r.iq_score)}</span></td>
+          <td class="mono">${r.answers_correct}/${r.total_questions}</td>
+          <td class="mono" style="color:var(--sub)">Top ${100-(r.percentile||0)}%</td>
+          <td class="mono" style="color:var(--dim)">${(+r.raw_score).toFixed(2)}</td>
+          <td><span class="badge ${r.passed?'b-pass':'b-fail'}"><span class="bdot"></span>${r.passed?'PASS':'FAIL'}</span></td>
+          <td>${r.flagged?`<span class="badge b-flag">${r.reviewed?'✓':'⚑'}</span>`:'—'}</td>
+          <td class="mono" style="color:var(--sub);font-size:.7rem">${fmtDate(r.completed_at)}</td>
+        </tr>`).join('')}</tbody></table>
+      </div>
+    </div>`).join('');
+}
+
+async function loadConfig(){
+  const r=await api('/api/config/');if(!r)return;
+  const cfg=await r.json();
+  Object.entries(cfg).forEach(([k,v])=>{const el=document.getElementById('cfg-'+k);if(el)el.value=v;});
+}
+async function saveConfig(){
+  const keys=['iq_threshold_min','iq_threshold_max','questions_per_test','time_per_question',
+    'failed_role_id','passed_role_id','test_channel_id','results_channel_id',
+    'allow_retest','retest_cooldown_hours','score_expires_days','flag_threshold_seconds','webhook_url',
+    'shame_channel_id','shame_role_id','shame_nickname','audit_channel_id',
+    'digest_channel_id','digest_day','digest_hour'];
+  const values={};keys.forEach(k=>{const el=document.getElementById('cfg-'+k);if(el)values[k]=el.value;});
+  const r=await api('/api/config/',{method:'PATCH',body:JSON.stringify({values})});
+  if(r?.ok)toast('Configuration saved');else toast('Save failed','error');
+}
+
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function band(iq){
+  if(iq>=130)return 'Very Superior';if(iq>=120)return 'Superior';if(iq>=110)return 'High Avg';
+  if(iq>=90)return 'Average';if(iq>=80)return 'Low Avg';if(iq>=70)return 'Borderline';
+  return 'Ext. Low';
+}
+function fmtDate(s){
+  if(!s)return '—';const d=new Date(s.endsWith('Z')?s:s+'Z');
+  return d.toLocaleDateString(undefined,{month:'short',day:'numeric'})+' '+d.toLocaleTimeString(undefined,{hour:'2-digit',minute:'2-digit'});
+}
+function fmtAgo(s){
+  if(!s)return '—';const d=new Date(s.endsWith('Z')?s:s+'Z');
+  const sec=Math.floor((Date.now()-d)/1000);
+  if(sec<60)return sec+'s ago';if(sec<3600)return Math.floor(sec/60)+'m ago';
+  if(sec<86400)return Math.floor(sec/3600)+'h ago';return Math.floor(sec/86400)+'d ago';
+}
+
+if(token)showApp();
+
+let _logEs = null;
+let _logLineCount = 0;
+const MAX_LOG_DOM = 500;
+
+function connectLogStream(){
+  if(_logEs){ _logEs.close(); _logEs=null; }
+  const dot=document.getElementById('log-conn-dot');
+  const txt=document.getElementById('log-conn-text');
+  dot.className='live-dot wait'; txt.textContent='Connecting...'; txt.style.color='var(--flag)';
+
+  const url='/api/logs/stream?token='+encodeURIComponent(token);
+  _logEs=new EventSource(url);
+  _logEs.onopen=()=>{
+    dot.className='live-dot'; txt.textContent='Live'; txt.style.color='var(--pass)';
+  };
+  _logEs.onmessage=(e)=>{ if(e.data) appendLog(e.data); };
+  _logEs.onerror=()=>{
+    dot.className='live-dot off'; txt.textContent='Reconnecting...'; txt.style.color='var(--fail)';
+    _logEs.close(); _logEs=null;
+    setTimeout(()=>{ if(_activeTab==='logs') connectLogStream(); }, 3000);
+  };
+}
+
+function appendLog(line){
+  const terminal=document.getElementById('log-terminal');
+  if(!terminal) return;
+  const wasBottom=terminal.scrollTop+terminal.clientHeight>=terminal.scrollHeight-24;
+  const el=document.createElement('div');
+  el.className='log-line';
+  el.innerHTML=formatLogLine(line);
+  terminal.appendChild(el);
+  _logLineCount++;
+  if(_logLineCount>MAX_LOG_DOM){
+    terminal.removeChild(terminal.firstChild);
+    _logLineCount--;
+  }
+  if(wasBottom) terminal.scrollTop=terminal.scrollHeight;
+}
+
+function clearLogs(){
+  const t=document.getElementById('log-terminal');
+  if(t){t.innerHTML='';_logLineCount=0;}
+}
+
+function formatLogLine(line){
+  const m=line.match(/^(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})[,.]?\d*\s+-\s+(\w+)\s+-\s+([^\s-][^-]*?)\s+-\s+(.*)$/);
+  if(m){
+    const [,ts,lvl,name,msg]=m;
+    return `<span class="ll-time">${esc(ts.slice(11))}</span>`+
+           `<span class="ll-lvl ${esc(lvl)}">${esc(lvl)}</span>`+
+           `<span class="ll-name">${esc(name)}</span>`+
+           `<span class="ll-msg">${esc(msg)}</span>`;
+  }
+  return `<span class="ll-msg">${esc(line)}</span>`;
+}
+
+function loadLogs(){ if(_logEs) return; connectLogStream(); }
+
+let _rfTimer=null;
+let _rfTick=0;
+
+function startAutoRefresh(){
+  if(_rfTimer) clearInterval(_rfTimer);
+  _rfTimer=setInterval(async()=>{
+    if(document.visibilityState!=='visible') return;
+    if(!token) return;
+    _rfTick++;
+    setLiveIndicator(true);
+    if(_activeTab==='dashboard') await loadDashboard();
+    else if(_activeTab==='results') await loadResults();
+    else if(_activeTab==='flagged') await loadFlagged();
+    if(_activeTab!=='flagged') loadFlaggedBadge();
+    setLiveIndicator(false);
+  },5000);
+}
+
+function setLiveIndicator(refreshing){
+  const dot=document.getElementById('live-status-dot');
+  const txt=document.getElementById('live-status-text');
+  if(refreshing){ dot.style.background='var(--flag)'; txt.textContent='Refreshing'; }
+  else { dot.style.background='var(--pass)'; txt.textContent='Live'; }
+}
+</script>
+</body>
+</html>
